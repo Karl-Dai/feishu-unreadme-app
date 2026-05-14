@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
+use std::fs;
 use std::fs::File;
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
@@ -127,4 +128,108 @@ fn read_header(f: &mut File) -> Result<(Header, u64)> {
     f.seek(SeekFrom::Start(pos)).map_err(AppError::Io)?;
 
     Ok((header, pos))
+}
+
+impl Asar {
+    /// 把整个 asar 解包到一个目录
+    pub fn extract(src: &Path, dst_dir: &Path) -> Result<()> {
+        let mut asar = Asar::open(src)?;
+        fs::create_dir_all(dst_dir).map_err(AppError::Io)?;
+        let files = asar.list_files();
+        for vp in files {
+            let bytes = asar.read_file(&vp)?;
+            let target = dst_dir.join(&vp);
+            if let Some(parent) = target.parent() {
+                fs::create_dir_all(parent).map_err(AppError::Io)?;
+            }
+            fs::write(&target, &bytes).map_err(AppError::Io)?;
+        }
+        Ok(())
+    }
+
+    /// 把目录打包成 asar
+    pub fn pack(src_dir: &Path, dst: &Path) -> Result<()> {
+        // 1. 收集 (虚拟路径, 字节内容),并构建 header tree
+        let mut files: Vec<(String, Vec<u8>)> = Vec::new();
+        collect(src_dir, src_dir, &mut files)?;
+        files.sort_by(|a, b| a.0.cmp(&b.0));
+
+        let mut tree: BTreeMap<String, Node> = BTreeMap::new();
+        let mut cursor: u64 = 0;
+        for (vp, bytes) in &files {
+            let size = bytes.len() as u64;
+            insert_node(
+                &mut tree,
+                vp,
+                Node::File {
+                    offset: Some(cursor.to_string()),
+                    size,
+                    executable: false,
+                    unpacked: false,
+                },
+            );
+            cursor += size;
+        }
+        let header = Header { files: tree };
+
+        // 2. 序列化 header,计算 padding
+        let header_str = serde_json::to_string(&header)
+            .map_err(|e| AppError::Internal(format!("header 序列化失败:{e}")))?;
+        let header_bytes = header_str.as_bytes();
+        let header_len = header_bytes.len();
+        let padding = (4 - (header_len % 4)) % 4;
+
+        // 3. 写文件
+        let mut out = fs::File::create(dst).map_err(AppError::Io)?;
+        let header_string_pickle_size = header_len as u32 + 4;
+        let header_pickle_size = header_string_pickle_size + 8;
+        out.write_all(&4u32.to_le_bytes()).map_err(AppError::Io)?;
+        out.write_all(&header_pickle_size.to_le_bytes()).map_err(AppError::Io)?;
+        out.write_all(&header_string_pickle_size.to_le_bytes()).map_err(AppError::Io)?;
+        out.write_all(&(header_len as u32).to_le_bytes()).map_err(AppError::Io)?;
+        out.write_all(header_bytes).map_err(AppError::Io)?;
+        out.write_all(&vec![0u8; padding]).map_err(AppError::Io)?;
+        for (_, bytes) in &files {
+            out.write_all(bytes).map_err(AppError::Io)?;
+        }
+        out.flush().map_err(AppError::Io)?;
+        Ok(())
+    }
+}
+
+fn collect(root: &Path, dir: &Path, out: &mut Vec<(String, Vec<u8>)>) -> Result<()> {
+    for entry in fs::read_dir(dir).map_err(AppError::Io)? {
+        let entry = entry.map_err(AppError::Io)?;
+        let path = entry.path();
+        if path.is_dir() {
+            collect(root, &path, out)?;
+        } else if path.is_file() {
+            let vp = path
+                .strip_prefix(root)
+                .map_err(|e| AppError::Internal(format!("strip_prefix:{e}")))?
+                .to_string_lossy()
+                .replace('\\', "/");
+            let bytes = fs::read(&path).map_err(AppError::Io)?;
+            out.push((vp, bytes));
+        }
+    }
+    Ok(())
+}
+
+fn insert_node(tree: &mut BTreeMap<String, Node>, virtual_path: &str, leaf: Node) {
+    let parts: Vec<&str> = virtual_path.split('/').collect();
+    let mut cur = tree;
+    for (i, p) in parts.iter().enumerate() {
+        if i == parts.len() - 1 {
+            cur.insert(p.to_string(), leaf.clone());
+            return;
+        }
+        let entry = cur
+            .entry(p.to_string())
+            .or_insert_with(|| Node::Dir { files: BTreeMap::new() });
+        match entry {
+            Node::Dir { files } => cur = files,
+            _ => return,
+        }
+    }
 }

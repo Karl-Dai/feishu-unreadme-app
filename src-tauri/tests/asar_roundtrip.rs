@@ -50,3 +50,30 @@ fn node_enum_shape_is_used() {
     // 编译期保证 Node 枚举存在(防止后续被 dead-code 删除)
     let _ = Node::File { offset: Some("0".into()), size: 0, executable: false, unpacked: false };
 }
+
+#[test]
+fn pack_unpack_roundtrip_preserves_content() {
+    use std::fs;
+
+    let src = fixture("happy.asar");
+    let mut original = Asar::open(&src).unwrap();
+    let preload_orig = original.read_file("renderer/preload.js").unwrap();
+    let logger_orig = original.read_file("renderer/logger.js").unwrap();
+
+    // 解包到临时目录
+    let tmp = tempfile::tempdir().unwrap();
+    let unpack_dir = tmp.path().join("unpacked");
+    fs::create_dir_all(&unpack_dir).unwrap();
+    Asar::extract(&src, &unpack_dir).unwrap();
+    assert!(unpack_dir.join("renderer/preload.js").exists());
+
+    // 重打包
+    let repacked = tmp.path().join("repacked.asar");
+    Asar::pack(&unpack_dir, &repacked).unwrap();
+    assert!(repacked.exists());
+
+    // 读出来字节应当相等
+    let mut again = Asar::open(&repacked).unwrap();
+    assert_eq!(again.read_file("renderer/preload.js").unwrap(), preload_orig);
+    assert_eq!(again.read_file("renderer/logger.js").unwrap(), logger_orig);
+}
