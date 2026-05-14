@@ -4,7 +4,7 @@
 
 ## 使用
 
-1. 从 [Releases](https://github.com/changyudai/feishu-unreadme-app/releases) 下载对应平台的安装包。
+1. 从 [Releases](https://github.com/Karl-Dai/feishu-unreadme-app/releases) 下载对应平台的安装包。
 2. macOS 首次启动可能被 Gatekeeper 拦截,执行一次:
    ```bash
    xattr -dr com.apple.quarantine /Applications/feishu-unreadme-app.app
@@ -32,7 +32,7 @@ cd src-tauri && cargo test
 
 ## 与原仓库的关系
 
-由 Python CLI 版的 [`feishu-unreadme`](https://github.com/changyudai/feishu-unreadme) 演化而来,原仓库继续可用但不再新增功能。
+由 Python CLI 版的 [`feishu-unreadme`](https://github.com/starccy/feishu-unreadme) 演化而来,原仓库继续可用但不再新增功能。
 
 ## License
 

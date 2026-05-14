@@ -36,7 +36,7 @@
     "updater": {
       "active": true,
       "endpoints": [
-        "https://github.com/changyudai/feishu-unreadme-app/releases/latest/download/latest.json"
+        "https://github.com/Karl-Dai/feishu-unreadme-app/releases/latest/download/latest.json"
       ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDNCN0Y2RTc1RkQ2MTYzRUEKUldUcVkySDlkVzUvTzhRUEI5VDFlQmFJU2p0aHBWVVd3VUlieTd5QjVGT1JIbUJreUc1UlRaejkK",
       "windows": {
