@@ -40,12 +40,17 @@ function bumpChangelog() {
   const p = path.join(root, 'CHANGELOG.md');
   let c = fs.readFileSync(p, 'utf8');
   const today = new Date().toISOString().slice(0, 10);
-  c = c.replace(
-    /^## \[Unreleased\]\s*\n/m,
-    `## [Unreleased]\n\n## [${target}] - ${today}\n`
-  );
+  const re = new RegExp(`^## \\[${target}\\] - (?:YYYY-MM-DD|\\d{4}-\\d{2}-\\d{2})\\s*$`, 'm');
+  if (re.test(c)) {
+    c = c.replace(re, `## [${target}] - ${today}`);
+  } else {
+    c = c.replace(
+      /^## \[Unreleased\]\s*\n/m,
+      `## [Unreleased]\n\n## [${target}] - ${today}\n`,
+    );
+  }
   fs.writeFileSync(p, c);
-  console.log(`  CHANGELOG.md → 加 [${target}] - ${today}`);
+  console.log(`  CHANGELOG.md → ${target} - ${today}`);
 }
 
 console.log(`bumping to v${target}`);
