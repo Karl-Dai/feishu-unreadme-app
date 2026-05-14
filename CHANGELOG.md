@@ -4,7 +4,7 @@
 
 ## [Unreleased]
 
-## [0.1.0] - YYYY-MM-DD
+## [0.1.0] - 2026-05-14
 
 ### Added
 - Tauri + Svelte 跨平台 GUI 骨架
