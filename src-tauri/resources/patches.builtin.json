@@ -4,13 +4,13 @@
   "patches": [
     {
       "id": "block-updateMessagesMeRead",
-      "regex": "\\w+\\.\\w+\\.info\\(\"updateMessagesMeRead\"",
+      "regex": "\\w+\\.info\\(\"updateMessagesMeRead\"",
       "payload": "(window.__feishuAllowMeReadCount>0?window.__feishuAllowMeReadCount--:t.messageIds=[]),",
       "required_hits": 1
     },
     {
       "id": "allow-on-send-success",
-      "regex": "\\w+\\.\\w+\\.info\\(\"MessageService::sendMessage:onSendMessageSuccess:\"",
+      "regex": "\\w+\\.info\\(\"MessageService::sendMessage:onSendMessageSuccess:\"",
       "payload": "window.__feishuAllowMeReadCount=1,",
       "required_hits": 1
     }
