@@ -16,7 +16,9 @@ pub struct PatchRule {
     pub required_hits: u32,
 }
 
-fn default_hits() -> u32 { 1 }
+fn default_hits() -> u32 {
+    1
+}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct PatchReport {
@@ -29,10 +31,13 @@ pub struct PatchReport {
 /// 在 unpacked_dir 下所有 .js 文件中应用一组 patches。
 /// 倒序插入保证 offset 不错位。任何 patch 命中数 < required_hits 即返回 PatchNoHit。
 pub fn apply_patches(unpacked_dir: &Path, patches: &[PatchRule]) -> Result<PatchReport> {
-    let compiled: Vec<(Regex, &PatchRule)> = patches.iter()
-        .map(|p| Regex::new(&p.regex)
-            .map(|r| (r, p))
-            .map_err(|e| AppError::Internal(format!("正则编译失败 {}: {e}", p.id))))
+    let compiled: Vec<(Regex, &PatchRule)> = patches
+        .iter()
+        .map(|p| {
+            Regex::new(&p.regex)
+                .map(|r| (r, p))
+                .map_err(|e| AppError::Internal(format!("正则编译失败 {}: {e}", p.id)))
+        })
         .collect::<Result<Vec<_>>>()?;
 
     // 收集所有 .js 文件中各 patch 的命中位置
@@ -40,13 +45,17 @@ pub fn apply_patches(unpacked_dir: &Path, patches: &[PatchRule]) -> Result<Patch
     let mut per_file_hits: BTreeMap<PathBuf, Vec<(usize, Vec<u8>)>> = BTreeMap::new();
     // 全局命中计数
     let mut per_patch_hits: BTreeMap<String, u32> = BTreeMap::new();
-    for p in patches { per_patch_hits.insert(p.id.clone(), 0); }
+    for p in patches {
+        per_patch_hits.insert(p.id.clone(), 0);
+    }
 
     for entry in walkdir_js(unpacked_dir)? {
         let bytes = fs::read(&entry).map_err(AppError::Io)?;
         for (re, rule) in &compiled {
             for m in re.find_iter(&bytes) {
-                per_file_hits.entry(entry.clone()).or_default()
+                per_file_hits
+                    .entry(entry.clone())
+                    .or_default()
                     .push((m.start(), rule.payload.as_bytes().to_vec()));
                 *per_patch_hits.get_mut(&rule.id).unwrap() += 1;
             }
@@ -57,7 +66,9 @@ pub fn apply_patches(unpacked_dir: &Path, patches: &[PatchRule]) -> Result<Patch
     for p in patches {
         let hits = per_patch_hits[&p.id];
         if hits < p.required_hits {
-            return Err(AppError::PatchNoHit { patch_id: p.id.clone() });
+            return Err(AppError::PatchNoHit {
+                patch_id: p.id.clone(),
+            });
         }
     }
 
@@ -69,7 +80,7 @@ pub fn apply_patches(unpacked_dir: &Path, patches: &[PatchRule]) -> Result<Patch
         per_patch: per_patch_hits,
     };
     for (path, mut anchors) in per_file_hits {
-        anchors.sort_by(|a, b| b.0.cmp(&a.0));
+        anchors.sort_by_key(|a| std::cmp::Reverse(a.0));
         let mut content = fs::read(&path).map_err(AppError::Io)?;
         for (offset, payload) in anchors {
             content.splice(offset..offset, payload.iter().copied());
@@ -106,7 +117,9 @@ mod tests {
 
     fn write(dir: &Path, name: &str, body: &str) -> PathBuf {
         let path = dir.join(name);
-        if let Some(parent) = path.parent() { fs::create_dir_all(parent).unwrap(); }
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).unwrap();
+        }
         fs::write(&path, body).unwrap();
         path
     }
@@ -114,7 +127,11 @@ mod tests {
     #[test]
     fn applies_single_patch_inserts_at_start_of_match() {
         let tmp = tempfile::tempdir().unwrap();
-        write(tmp.path(), "a.js", "x; log.info(\"updateMessagesMeRead\", t);");
+        write(
+            tmp.path(),
+            "a.js",
+            "x; log.info(\"updateMessagesMeRead\", t);",
+        );
         let rules = vec![PatchRule {
             id: "r1".into(),
             regex: r#"\w+\.info\("updateMessagesMeRead""#.into(),
@@ -149,8 +166,11 @@ mod tests {
     fn reverse_order_keeps_offsets_correct_for_multiple_hits_in_one_file() {
         let tmp = tempfile::tempdir().unwrap();
         // 同一锚点在一个文件里出现两次
-        write(tmp.path(), "a.js",
-            "log.info(\"updateMessagesMeRead\", a); log.info(\"updateMessagesMeRead\", b);");
+        write(
+            tmp.path(),
+            "a.js",
+            "log.info(\"updateMessagesMeRead\", a); log.info(\"updateMessagesMeRead\", b);",
+        );
         let rules = vec![PatchRule {
             id: "r1".into(),
             regex: r#"log\.info\("updateMessagesMeRead""#.into(),
@@ -161,7 +181,9 @@ mod tests {
         assert_eq!(report.per_patch["r1"], 2);
         let content = fs::read_to_string(tmp.path().join("a.js")).unwrap();
         // 两处都插入,且不互相错位
-        let count = content.matches("Xlog.info(\"updateMessagesMeRead\"").count();
+        let count = content
+            .matches("Xlog.info(\"updateMessagesMeRead\"")
+            .count();
         assert_eq!(count, 2, "got: {content}");
     }
 }

@@ -42,13 +42,21 @@ fn malformed_header_returns_error() {
     tmp.flush().unwrap();
     let err = Asar::open(tmp.path()).err().expect("应该报错");
     let msg = format!("{err:?}");
-    assert!(msg.contains("AsarMalformed") || msg.contains("Io"), "got: {msg}");
+    assert!(
+        msg.contains("AsarMalformed") || msg.contains("Io"),
+        "got: {msg}"
+    );
 }
 
 #[test]
 fn node_enum_shape_is_used() {
     // 编译期保证 Node 枚举存在(防止后续被 dead-code 删除)
-    let _ = Node::File { offset: Some("0".into()), size: 0, executable: false, unpacked: false };
+    let _ = Node::File {
+        offset: Some("0".into()),
+        size: 0,
+        executable: false,
+        unpacked: false,
+    };
 }
 
 #[test]
@@ -74,6 +82,9 @@ fn pack_unpack_roundtrip_preserves_content() {
 
     // 读出来字节应当相等
     let mut again = Asar::open(&repacked).unwrap();
-    assert_eq!(again.read_file("renderer/preload.js").unwrap(), preload_orig);
+    assert_eq!(
+        again.read_file("renderer/preload.js").unwrap(),
+        preload_orig
+    );
     assert_eq!(again.read_file("renderer/logger.js").unwrap(), logger_orig);
 }

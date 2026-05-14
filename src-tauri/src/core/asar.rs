@@ -11,7 +11,9 @@ use crate::core::error::{AppError, Result};
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum Node {
-    Dir { files: BTreeMap<String, Node> },
+    Dir {
+        files: BTreeMap<String, Node>,
+    },
     File {
         #[serde(default)]
         offset: Option<String>,
@@ -38,7 +40,11 @@ impl Asar {
     pub fn open(path: &Path) -> Result<Self> {
         let mut file = File::open(path).map_err(AppError::Io)?;
         let (header, payload_offset) = read_header(&mut file)?;
-        Ok(Self { file, header, payload_offset })
+        Ok(Self {
+            file,
+            header,
+            payload_offset,
+        })
     }
 
     pub fn header(&self) -> &Header {
@@ -50,13 +56,21 @@ impl Asar {
         let node = find_node(&self.header.files, virtual_path)
             .ok_or_else(|| AppError::AsarMalformed(format!("找不到文件:{virtual_path}")))?;
         let (offset, size) = match node {
-            Node::File { offset: Some(o), size, .. } => {
-                let off: u64 = o.parse().map_err(|_| AppError::AsarMalformed(format!("非法 offset:{o}")))?;
+            Node::File {
+                offset: Some(o),
+                size,
+                ..
+            } => {
+                let off: u64 = o
+                    .parse()
+                    .map_err(|_| AppError::AsarMalformed(format!("非法 offset:{o}")))?;
                 (off, *size)
             }
             _ => return Err(AppError::AsarMalformed(format!("不是文件:{virtual_path}"))),
         };
-        self.file.seek(SeekFrom::Start(self.payload_offset + offset)).map_err(AppError::Io)?;
+        self.file
+            .seek(SeekFrom::Start(self.payload_offset + offset))
+            .map_err(AppError::Io)?;
         let mut buf = vec![0u8; size as usize];
         self.file.read_exact(&mut buf).map_err(AppError::Io)?;
         Ok(buf)
@@ -76,7 +90,11 @@ impl Asar {
 
 fn walk(map: &BTreeMap<String, Node>, prefix: &str, out: &mut Vec<String>) {
     for (name, node) in map {
-        let next = if prefix.is_empty() { name.clone() } else { format!("{prefix}/{name}") };
+        let next = if prefix.is_empty() {
+            name.clone()
+        } else {
+            format!("{prefix}/{name}")
+        };
         match node {
             Node::Dir { files } => walk(files, &next, out),
             Node::File { .. } => out.push(next),
@@ -110,7 +128,9 @@ fn read_header(f: &mut File) -> Result<(Header, u64)> {
     // 跳过外层 pickle:第一个 u32 永远是 4(指示 header pickle size 字段的字节数)
     let outer = read_u32_le(f)?;
     if outer != 4 {
-        return Err(AppError::AsarMalformed(format!("非预期外层 pickle size:{outer}")));
+        return Err(AppError::AsarMalformed(format!(
+            "非预期外层 pickle size:{outer}"
+        )));
     }
     let _header_pickle_size = read_u32_le(f)?;
     let _header_string_pickle_size = read_u32_le(f)?;
@@ -184,9 +204,12 @@ impl Asar {
         let header_string_pickle_size = header_len as u32 + 4;
         let header_pickle_size = header_string_pickle_size + 8;
         out.write_all(&4u32.to_le_bytes()).map_err(AppError::Io)?;
-        out.write_all(&header_pickle_size.to_le_bytes()).map_err(AppError::Io)?;
-        out.write_all(&header_string_pickle_size.to_le_bytes()).map_err(AppError::Io)?;
-        out.write_all(&(header_len as u32).to_le_bytes()).map_err(AppError::Io)?;
+        out.write_all(&header_pickle_size.to_le_bytes())
+            .map_err(AppError::Io)?;
+        out.write_all(&header_string_pickle_size.to_le_bytes())
+            .map_err(AppError::Io)?;
+        out.write_all(&(header_len as u32).to_le_bytes())
+            .map_err(AppError::Io)?;
         out.write_all(header_bytes).map_err(AppError::Io)?;
         out.write_all(&vec![0u8; padding]).map_err(AppError::Io)?;
         for (_, bytes) in &files {
@@ -224,9 +247,9 @@ fn insert_node(tree: &mut BTreeMap<String, Node>, virtual_path: &str, leaf: Node
             cur.insert(p.to_string(), leaf.clone());
             return;
         }
-        let entry = cur
-            .entry(p.to_string())
-            .or_insert_with(|| Node::Dir { files: BTreeMap::new() });
+        let entry = cur.entry(p.to_string()).or_insert_with(|| Node::Dir {
+            files: BTreeMap::new(),
+        });
         match entry {
             Node::Dir { files } => cur = files,
             _ => return,

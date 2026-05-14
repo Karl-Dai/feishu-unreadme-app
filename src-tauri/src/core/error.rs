@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use serde::{Serialize, Serializer};
+use std::path::PathBuf;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -74,7 +74,11 @@ impl Serialize for AppError {
             AppError::Io(_) => "Io",
             AppError::Internal(_) => "Internal",
         };
-        Wire { kind, message: self.to_string() }.serialize(s)
+        Wire {
+            kind,
+            message: self.to_string(),
+        }
+        .serialize(s)
     }
 }
 

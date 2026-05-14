@@ -2,8 +2,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use chrono::Utc;
-use sha2::{Digest, Sha256};
 use serde::Serialize;
+use sha2::{Digest, Sha256};
 use tracing::{info, warn};
 
 use crate::core::asar::Asar;

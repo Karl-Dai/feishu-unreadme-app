@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use std::fs;
+use std::path::PathBuf;
 
 use feishu_unreadme_app_lib::core::asar::Asar;
 use feishu_unreadme_app_lib::core::error::AppError;

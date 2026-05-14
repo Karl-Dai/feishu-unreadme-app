@@ -46,7 +46,10 @@ pub fn state_file(state_dir: &Path) -> PathBuf {
 pub fn load(state_dir: &Path) -> Result<State> {
     let path = state_file(state_dir);
     if !path.exists() {
-        return Ok(State { schema: 1, ..Default::default() });
+        return Ok(State {
+            schema: 1,
+            ..Default::default()
+        });
     }
     let bytes = fs::read(&path).map_err(AppError::Io)?;
     let state: State = serde_json::from_slice(&bytes)
@@ -99,7 +102,10 @@ mod tests {
         let loaded = load(tmp.path()).unwrap();
         assert_eq!(loaded.schema, 1);
         assert_eq!(loaded.feishu.as_ref().unwrap().version_seen, "7.31.5");
-        assert_eq!(loaded.patches.as_ref().unwrap().active_source, PatchSource::Builtin);
+        assert_eq!(
+            loaded.patches.as_ref().unwrap().active_source,
+            PatchSource::Builtin
+        );
     }
 
     #[test]

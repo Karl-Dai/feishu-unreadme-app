@@ -126,6 +126,6 @@ mod tests {
         std::fs::write(webcontent.join("messenger.asar"), b"dummy").unwrap();
         let info = validate(tmp.path()).unwrap();
         assert!(info.asar_path.ends_with("webcontent/messenger.asar"));
-        assert_eq!(info.is_running, false);
+        assert!(!info.is_running);
     }
 }

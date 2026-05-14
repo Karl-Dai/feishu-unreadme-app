@@ -14,8 +14,13 @@ use crate::core::state::{self, State as PersistedState};
 #[serde(tag = "state", rename_all = "snake_case")]
 pub enum PatchUiState {
     Unpatched,
-    Patched { feishu_version: String, patch_version: String },
-    Stale { feishu_version_seen: String },
+    Patched {
+        feishu_version: String,
+        patch_version: String,
+    },
+    Stale {
+        feishu_version_seen: String,
+    },
     Unknown,
     Incompatible,
 }
@@ -53,7 +58,11 @@ fn derive_patch_state(install: &InstallInfo, persisted: &PersistedState) -> Patc
     let bak = install.asar_path.with_extension("asar.bak");
     let bak_exists = bak.exists();
     let Some(f) = persisted.feishu.as_ref() else {
-        return if bak_exists { PatchUiState::Unknown } else { PatchUiState::Unpatched };
+        return if bak_exists {
+            PatchUiState::Unknown
+        } else {
+            PatchUiState::Unpatched
+        };
     };
     let Ok(current_hash) = sha256_file(&install.asar_path) else {
         return PatchUiState::Unknown;
@@ -61,7 +70,11 @@ fn derive_patch_state(install: &InstallInfo, persisted: &PersistedState) -> Patc
     if current_hash == f.asar_hash_after
         && install.version.as_deref() == Some(f.version_seen.as_str())
     {
-        let v = persisted.patches.as_ref().map(|p| p.active_version.clone()).unwrap_or_default();
+        let v = persisted
+            .patches
+            .as_ref()
+            .map(|p| p.active_version.clone())
+            .unwrap_or_default();
         PatchUiState::Patched {
             feishu_version: f.version_seen.clone(),
             patch_version: v,

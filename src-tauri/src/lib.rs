@@ -1,5 +1,5 @@
-pub mod core;
 pub mod commands;
+pub mod core;
 
 use std::sync::OnceLock;
 
@@ -31,7 +31,13 @@ impl<S: tracing::Subscriber> Layer<S> for EventLayer {
             _ => return,
         };
         if let Some(h) = APP_HANDLE.get() {
-            let _ = h.emit("log", LogEvent { level: level.into(), text: v.0 });
+            let _ = h.emit(
+                "log",
+                LogEvent {
+                    level: level.into(),
+                    text: v.0,
+                },
+            );
         }
     }
 }
