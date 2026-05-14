@@ -33,6 +33,8 @@ export type ApplyReport = {
   hash_after: string;
 };
 
+export type AppUpdateInfo = { version: string; notes: string | null };
+
 export class AppError extends Error {
   kind: AppErrorWire['kind'];
   constructor(wire: AppErrorWire) {
@@ -60,6 +62,8 @@ export const ipc = {
   getAppVersion:       () => call<string>('get_app_version'),
   applyPatch:          (install: InstallInfo) => call<ApplyReport>('apply_patch_cmd', { install }),
   restoreBackup:       (install: InstallInfo) => call<void>('restore_backup_cmd', { install }),
+  checkAppUpdate:      () => call<AppUpdateInfo | null>('check_app_update'),
+  triggerAppUpdate:    () => call<void>('trigger_app_update'),
 };
 
 /** 把 AppError 转成用户可读 toast,并把消息返回给调用方便于 inline 显示 */

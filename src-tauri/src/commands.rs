@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 use tauri::{AppHandle, Manager};
+use tauri_plugin_updater::UpdaterExt;
 
 use crate::core::error::{AppError, Result};
 use crate::core::feishu_locator::{self, InstallInfo};
@@ -104,4 +105,42 @@ pub fn restore_backup_cmd(app: AppHandle, install: InstallInfo) -> Result<()> {
 #[tauri::command]
 pub fn get_builtin_patches() -> Result<PatchSet> {
     patch_source::load_builtin()
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AppUpdateInfo {
+    pub version: String,
+    pub notes: Option<String>,
+}
+
+#[tauri::command]
+pub async fn check_app_update(app: AppHandle) -> Result<Option<AppUpdateInfo>> {
+    let updater = app
+        .updater()
+        .map_err(|e| AppError::UpdaterFailed(e.to_string()))?;
+    let res = updater
+        .check()
+        .await
+        .map_err(|e| AppError::UpdaterFailed(e.to_string()))?;
+    Ok(res.map(|u| AppUpdateInfo {
+        version: u.version.to_string(),
+        notes: u.body.clone(),
+    }))
+}
+
+#[tauri::command]
+pub async fn trigger_app_update(app: AppHandle) -> Result<()> {
+    let updater = app
+        .updater()
+        .map_err(|e| AppError::UpdaterFailed(e.to_string()))?;
+    let update = updater
+        .check()
+        .await
+        .map_err(|e| AppError::UpdaterFailed(e.to_string()))?
+        .ok_or_else(|| AppError::UpdaterFailed("没有可用更新".into()))?;
+    update
+        .download_and_install(|_, _| {}, || {})
+        .await
+        .map_err(|e| AppError::UpdaterFailed(e.to_string()))?;
+    Ok(())
 }
