@@ -19,7 +19,32 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = [] }
-tauri-plugin-opener = "2"
+tauri-plugin-shell = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+thiserror = "1"
+anyhow = "1"
+
+sha2 = "0.10"
+regex = "1"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+minisign-verify = "0.2"
+
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+dirs = "5"
+plist = "1"
+chrono = { version = "0.4", features = ["serde"] }
+
+# 仅 Windows
+[target.'cfg(windows)'.dependencies]
+winreg = "0.52"
+
+[dev-dependencies]
+tempfile = "3"
 
