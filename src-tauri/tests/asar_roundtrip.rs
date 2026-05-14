@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use feishu_unreadme_app_lib::core::asar::{Asar, Node};
+
 fn fixture(name: &str) -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
@@ -8,14 +10,43 @@ fn fixture(name: &str) -> PathBuf {
 }
 
 #[test]
-fn can_open_and_list_fixture() {
-    use feishu_unreadme_app_lib::core::asar::Asar;
-    let path = fixture("happy.asar");
-    if !path.exists() {
-        eprintln!("跳过:fixture 还没生成");
-        return;
-    }
-    let asar = Asar::open(&path).expect("open");
+fn happy_fixture_lists_expected_files() {
+    let asar = Asar::open(&fixture("happy.asar")).expect("open");
+    let mut files = asar.list_files();
+    files.sort();
+    assert_eq!(files, vec!["renderer/logger.js", "renderer/preload.js"]);
+}
+
+#[test]
+fn happy_fixture_reads_preload_content() {
+    let mut asar = Asar::open(&fixture("happy.asar")).expect("open");
+    let bytes = asar.read_file("renderer/preload.js").expect("read");
+    let s = std::str::from_utf8(&bytes).expect("utf8");
+    assert!(s.contains("updateMessagesMeRead"));
+    assert!(s.contains("onSendMessageSuccess"));
+}
+
+#[test]
+fn multihit_fixture_has_four_js_files() {
+    let asar = Asar::open(&fixture("multihit.asar")).expect("open");
     let files = asar.list_files();
-    assert!(!files.is_empty(), "fixture 应该至少包含一个文件");
+    assert_eq!(files.len(), 5, "三个 mod + logger + send");
+}
+
+#[test]
+fn malformed_header_returns_error() {
+    use std::io::Write;
+    let mut tmp = tempfile::NamedTempFile::new().unwrap();
+    // 写一个非法的 header(全 0)
+    tmp.write_all(&[0u8; 32]).unwrap();
+    tmp.flush().unwrap();
+    let err = Asar::open(tmp.path()).err().expect("应该报错");
+    let msg = format!("{err:?}");
+    assert!(msg.contains("AsarMalformed") || msg.contains("Io"), "got: {msg}");
+}
+
+#[test]
+fn node_enum_shape_is_used() {
+    // 编译期保证 Node 枚举存在(防止后续被 dead-code 删除)
+    let _ = Node::File { offset: Some("0".into()), size: 0, executable: false, unpacked: false };
 }
