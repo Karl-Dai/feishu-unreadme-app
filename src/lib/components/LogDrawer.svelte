@@ -4,7 +4,7 @@
 </script>
 
 <div class="drawer" class:open>
-  <button class="handle" on:click={() => open = !open}>
+  <button class="handle" onclick={() => open = !open}>
     {open ? '收起日志' : `展开日志 (${$logs.length})`}
   </button>
   {#if open}

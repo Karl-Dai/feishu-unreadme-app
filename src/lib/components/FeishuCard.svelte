@@ -18,13 +18,13 @@
     <p><strong>路径:</strong> <code>{$feishu.info.install_path}</code></p>
     <p><strong>版本:</strong> {$feishu.info.version ?? '(未知)'}</p>
     <p class="muted">asar: <code>{$feishu.info.asar_path}</code></p>
-    <button on:click={pick}>改路径</button>
+    <button onclick={pick}>改路径</button>
   {:else if $feishu.kind === 'not-found'}
     <p class="warn">未自动找到飞书,请手动选择安装目录</p>
-    <button on:click={pick}>选择目录</button>
+    <button onclick={pick}>选择目录</button>
   {:else}
     <p class="err">{$feishu.message}</p>
-    <button on:click={pick}>重新选择</button>
+    <button onclick={pick}>重新选择</button>
   {/if}
 </section>
 

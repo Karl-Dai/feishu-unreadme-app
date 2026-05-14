@@ -13,7 +13,7 @@
     {#if $appUpdate.notes}
       <details><summary>更新说明</summary><pre>{$appUpdate.notes}</pre></details>
     {/if}
-    <button on:click={() => appUpdate.install()}>下载并安装</button>
+    <button onclick={() => appUpdate.install()}>下载并安装</button>
   {:else if $appUpdate.kind === 'installing'}
     <p>正在下载并安装…</p>
   {:else}

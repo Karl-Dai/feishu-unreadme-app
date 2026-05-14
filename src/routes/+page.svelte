@@ -6,8 +6,10 @@
   import LogDrawer from '$lib/components/LogDrawer.svelte';
   import { feishu } from '$lib/stores/feishu';
   import { appUpdate } from '$lib/stores/app_update';
+  import { logs } from '$lib/stores/logs';
 
   onMount(() => {
+    logs.init();
     feishu.detect();
     appUpdate.init();
   });

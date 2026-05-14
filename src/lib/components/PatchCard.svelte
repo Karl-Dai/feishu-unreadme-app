@@ -38,8 +38,8 @@
     </details>
   {/if}
   <div class="actions">
-    <button on:click={onApply} disabled={$feishu.kind !== 'ok' || $patch.kind === 'working'}>一键补丁</button>
-    <button on:click={onRestore} disabled={$feishu.kind !== 'ok' || $patch.kind === 'working'}>恢复备份</button>
+    <button onclick={onApply} disabled={$feishu.kind !== 'ok' || $patch.kind === 'working'}>一键补丁</button>
+    <button onclick={onRestore} disabled={$feishu.kind !== 'ok' || $patch.kind === 'working'}>恢复备份</button>
   </div>
 </section>
 
