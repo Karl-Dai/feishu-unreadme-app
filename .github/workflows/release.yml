@@ -16,15 +16,21 @@ jobs:
           - os: macos-14
             rust_target: aarch64-apple-darwin
             label: macos-arm64
+            extra_args: ''
           - os: macos-15-intel
             rust_target: x86_64-apple-darwin
             label: macos-x64
+            extra_args: ''
           - os: ubuntu-latest
             rust_target: x86_64-unknown-linux-gnu
             label: linux-x64
+            # AppImage 依赖远程下载 linuxdeploy/apprun,在 GitHub Actions 上极不稳定,
+            # 只产 deb + rpm
+            extra_args: '--bundles deb,rpm'
           - os: windows-latest
             rust_target: x86_64-pc-windows-msvc
             label: windows-x64
+            extra_args: ''
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -62,4 +68,4 @@ jobs:
             自动生成的 release 草稿。请填入 CHANGELOG 内容后 publish。
           releaseDraft: true
           prerelease: false
-          args: --target ${{ matrix.rust_target }}
+          args: --target ${{ matrix.rust_target }} ${{ matrix.extra_args }}
