@@ -1,29 +1,85 @@
 <script lang="ts">
   import { appUpdate } from '$lib/stores/app_update';
+  import { t } from '$lib/i18n';
 </script>
 
-<section class="card">
-  <h2>应用更新</h2>
-  {#if $appUpdate.kind === 'checking'}
-    <p>检测中… (当前 v{$appUpdate.current})</p>
-  {:else if $appUpdate.kind === 'up_to_date'}
-    <p>已是最新版本(v{$appUpdate.current})</p>
-  {:else if $appUpdate.kind === 'available'}
-    <p>当前 v{$appUpdate.current} → 新版 <strong>v{$appUpdate.next}</strong></p>
-    {#if $appUpdate.notes}
-      <details><summary>更新说明</summary><pre>{$appUpdate.notes}</pre></details>
+<section>
+  <div class="head">
+    <span class="prompt">updater/check</span>
+    {#if $appUpdate.kind === 'checking'}
+      <span class="tag tag--muted">{$t.updateTagChecking}</span>
+    {:else if $appUpdate.kind === 'up_to_date'}
+      <span class="tag tag--ok">{$t.updateTagUpToDate}</span>
+    {:else if $appUpdate.kind === 'available'}
+      <span class="tag tag--accent">{$t.updateTagAvailable}</span>
+    {:else if $appUpdate.kind === 'installing'}
+      <span class="tag tag--accent">{$t.updateTagInstalling}</span>
+    {:else}
+      <span class="tag tag--muted">{$t.updateTagIdle}</span>
     {/if}
-    <button onclick={() => appUpdate.install()}>下载并安装</button>
-  {:else if $appUpdate.kind === 'installing'}
-    <p>正在下载并安装…</p>
-  {:else}
-    <p>当前版本:v{$appUpdate.current}</p>
-  {/if}
+  </div>
+
+  <div class="body">
+    {#if $appUpdate.kind === 'checking'}
+      <p class="dim">{$t.updateChecking}<span class="cursor"></span></p>
+      <p class="kv">{$t.updateKvCurrent} <span class="v">v{$appUpdate.current}</span></p>
+    {:else if $appUpdate.kind === 'up_to_date'}
+      <p class="kv">{$t.updateKvCurrent} <span class="v">v{$appUpdate.current}</span></p>
+    {:else if $appUpdate.kind === 'available'}
+      <p class="kv">
+        {$t.updateKvCurrent} <span class="v dim">v{$appUpdate.current}</span>
+        <span class="arrow">→</span>
+        {$t.updateKvRemote} <span class="v accent">v{$appUpdate.next}</span>
+      </p>
+      {#if $appUpdate.notes}
+        <details>
+          <summary>{$t.updateNotesSummary}</summary>
+          <pre>{$appUpdate.notes}</pre>
+        </details>
+      {/if}
+      <button class="btn" onclick={() => appUpdate.install()}>{$t.updateBtnInstall}</button>
+    {:else if $appUpdate.kind === 'installing'}
+      <p class="dim">{$t.updateInstalling}<span class="cursor"></span></p>
+    {:else}
+      <p class="kv">{$t.updateKvCurrent} <span class="v">v{$appUpdate.current}</span></p>
+    {/if}
+  </div>
 </section>
 
 <style>
-  .card { background: #fff; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
-  h2 { margin: 0 0 8px; font-size: 16px; }
-  pre { font-size: 12px; background: #f6f8fa; padding: 8px; border-radius: 4px; }
-  button { padding: 6px 12px; border: 1px solid #d0d7de; background: #f6f8fa; border-radius: 6px; cursor: pointer; }
+  section { display: flex; flex-direction: column; gap: 10px; }
+  .head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .body { display: flex; flex-direction: column; gap: 12px; }
+  p { margin: 0; }
+  .kv {
+    font-size: 12.5px;
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .v {
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--fg);
+  }
+  .arrow { color: var(--fg-dim); }
+  details summary {
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--fg-muted); cursor: pointer; user-select: none;
+  }
+  details summary:hover { color: var(--accent); }
+  pre {
+    margin: 8px 0 0;
+    padding: 10px 12px;
+    background: rgba(51, 255, 102, 0.04);
+    border-left: 2px solid var(--border);
+    font-size: 11.5px;
+    color: var(--fg-dim);
+    overflow-x: auto;
+    white-space: pre-wrap;
+  }
 </style>
