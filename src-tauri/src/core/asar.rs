@@ -200,9 +200,14 @@ impl Asar {
         let padding = (4 - (header_len % 4)) % 4;
 
         // 3. 写文件
+        // Pickle 布局: outer pickle (8 bytes) 内放 1 个 u32 = inner pickle buf size;
+        // inner pickle 内放 readString(u32 string_len + string bytes + padding 对齐到 4)。
+        // inner pickle buf size 必须 **包含** string 的 align padding,否则 readArchiveHeader
+        // 读到 header buf 长度算少,后续 readString 会从 payload 区域取 string_len,
+        // 解出 GB 级别的离谱长度,Electron 直接判 asar 损坏。
         let mut out = fs::File::create(dst).map_err(AppError::Io)?;
-        let header_string_pickle_size = header_len as u32 + 4;
-        let header_pickle_size = header_string_pickle_size + 8;
+        let header_string_pickle_size = (header_len + padding) as u32 + 4;
+        let header_pickle_size = header_string_pickle_size + 4;
         out.write_all(&4u32.to_le_bytes()).map_err(AppError::Io)?;
         out.write_all(&header_pickle_size.to_le_bytes())
             .map_err(AppError::Io)?;

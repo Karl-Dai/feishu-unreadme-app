@@ -163,6 +163,29 @@ mod tests {
     }
 
     #[test]
+    fn matches_full_member_chain_with_dot_in_charset() {
+        // 飞书 minified 后写成 `l.Ay.info("X"`,旧 regex `\w+\.info\(...)` 只命中
+        // `Ay.info(...)`,注入会破坏成 `l.<INJECT>Ay.info(...)`,运行时把 INJECT
+        // 当成 `l` 的成员访问,语义错。新 regex `[\w.]+\.info\(...)` 必须命中
+        // 整个 `l.Ay.info(...)`,注入到 `l` 前。
+        let tmp = tempfile::tempdir().unwrap();
+        write(tmp.path(), "a.js", "x; l.Ay.info(\"updateMessagesMeRead\", t);");
+        let rules = vec![PatchRule {
+            id: "r1".into(),
+            regex: r#"[\w.]+\.info\("updateMessagesMeRead""#.into(),
+            payload: "INJ;".into(),
+            required_hits: 1,
+        }];
+        apply_patches(tmp.path(), &rules).unwrap();
+        let content = fs::read_to_string(tmp.path().join("a.js")).unwrap();
+        assert!(
+            content.contains("INJ;l.Ay.info(\"updateMessagesMeRead\""),
+            "got: {content}"
+        );
+        assert!(!content.contains("l.INJ;Ay"), "must not break member chain");
+    }
+
+    #[test]
     fn reverse_order_keeps_offsets_correct_for_multiple_hits_in_one_file() {
         let tmp = tempfile::tempdir().unwrap();
         // 同一锚点在一个文件里出现两次

@@ -60,6 +60,50 @@ fn node_enum_shape_is_used() {
 }
 
 #[test]
+fn pack_writes_header_pickle_size_including_string_padding() {
+    // 回归测试:历史上 pack() 把 header_pickle_size 写成 header_len + 12,
+    // 漏算了 readString 末尾的对齐 padding。Rust 端自己读自己写的 asar 因为
+    // 读路径直接跳 16 bytes 不校验,所以 roundtrip 不爆;但 Electron / @electron/asar
+    // 严格按 sizeBuf 给出的长度读 inner pickle,bug 表现为读 string_len 时
+    // 落到 payload 区,解出离谱长度(GB 级)直接判 asar 损坏,飞书加载不了。
+    use std::fs;
+    use std::io::Read;
+
+    let tmp = tempfile::tempdir().unwrap();
+    let src = tmp.path().join("src");
+    fs::create_dir_all(&src).unwrap();
+    // 故意把内容长度造成 header_len % 4 != 0,触发 padding > 0
+    fs::write(src.join("a.js"), "x".repeat(7)).unwrap();
+    fs::write(src.join("b.js"), "y".repeat(13)).unwrap();
+
+    let dst = tmp.path().join("out.asar");
+    feishu_unreadme_app_lib::core::asar::Asar::pack(&src, &dst).unwrap();
+
+    let mut f = fs::File::open(&dst).unwrap();
+    let mut head = [0u8; 16];
+    f.read_exact(&mut head).unwrap();
+    let outer = u32::from_le_bytes(head[0..4].try_into().unwrap());
+    let header_pickle_size = u32::from_le_bytes(head[4..8].try_into().unwrap());
+    let header_string_pickle_size = u32::from_le_bytes(head[8..12].try_into().unwrap());
+    let string_len = u32::from_le_bytes(head[12..16].try_into().unwrap());
+
+    assert_eq!(outer, 4);
+    let padding = (4 - (string_len % 4)) % 4;
+    // inner_payload_size = 4 (string_len 字段) + string_len bytes + padding
+    assert_eq!(
+        header_string_pickle_size,
+        4 + string_len + padding,
+        "string_pickle_size 漏 padding"
+    );
+    // inner_buf_size = 4 (inner_payload_size 字段) + inner_payload_size
+    assert_eq!(
+        header_pickle_size,
+        4 + header_string_pickle_size,
+        "header_pickle_size 漏 padding"
+    );
+}
+
+#[test]
 fn pack_unpack_roundtrip_preserves_content() {
     use std::fs;
 
