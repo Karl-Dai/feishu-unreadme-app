@@ -56,6 +56,16 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Extract release notes from CHANGELOG.md
+        id: changelog
+        shell: bash
+        run: |
+          {
+            echo 'body<<RELEASE_BODY_EOF'
+            node scripts/extract-changelog-section.mjs "${{ github.ref_name }}"
+            echo 'RELEASE_BODY_EOF'
+          } >> "$GITHUB_OUTPUT"
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -64,8 +74,7 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: ${{ github.ref_name }}
-          releaseBody: |
-            自动生成的 release 草稿。请填入 CHANGELOG 内容后 publish。
+          releaseBody: ${{ steps.changelog.outputs.body }}
           releaseDraft: true
           prerelease: false
           args: --target ${{ matrix.rust_target }} ${{ matrix.extra_args }}
