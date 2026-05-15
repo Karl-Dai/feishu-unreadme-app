@@ -24,9 +24,7 @@ jobs:
           - os: ubuntu-latest
             rust_target: x86_64-unknown-linux-gnu
             label: linux-x64
-            # AppImage 依赖远程下载 linuxdeploy/apprun,在 GitHub Actions 上极不稳定,
-            # 只产 deb + rpm
-            extra_args: '--bundles deb,rpm'
+            extra_args: '--bundles deb,rpm'  # AppImage 远程下载 linuxdeploy/apprun 在 GHA 极不稳定,跳过
           - os: windows-latest
             rust_target: x86_64-pc-windows-msvc
             label: windows-x64

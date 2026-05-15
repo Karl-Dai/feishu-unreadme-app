@@ -15,7 +15,7 @@ const escaped = version.replace(/\./g, '\\.');
 
 const text = readFileSync(resolve(process.cwd(), 'CHANGELOG.md'), 'utf8');
 const re = new RegExp(
-  `(?:^|\\n)## \\[${escaped}\\][^\\n]*\\n([\\s\\S]*?)(?=\\n## \\[|$)`,
+  String.raw`(?:^|\n)## \[${escaped}\][^\n]*\n([\s\S]*?)(?=\n## \[|$)`,
 );
 const m = re.exec(text);
 if (!m) {
