@@ -26,3 +26,6 @@ Thumbs.db
 
 # Updater secrets
 .secrets/
+
+# Claude Code local cache
+.claude/

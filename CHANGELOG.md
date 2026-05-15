@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-05-15
+
+### Fixed
+- macOS 飞书自动探测扩充 `Feishu.app` / `飞书.app` 路径,中国版用户不再需要手动选目录
+- CI release 配置补全 minisign 签名 secret,产物正确生成 `latest.json`,修复客户端"Could not fetch a valid release JSON"自动更新报错
+
+### Changed
+- CI/release workflow runner `macos-13` → `macos-15-intel`,解决 Intel 档长时间排队问题
+
 ## [0.1.0] - 2026-05-14
 
 ### Added

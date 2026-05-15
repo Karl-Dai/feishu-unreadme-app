@@ -35,7 +35,11 @@ pub fn validate(path: &Path) -> Result<InstallInfo> {
 fn default_candidates() -> Vec<PathBuf> {
     #[cfg(target_os = "macos")]
     {
-        vec![PathBuf::from("/Applications/Lark.app")]
+        vec![
+            PathBuf::from("/Applications/Lark.app"),
+            PathBuf::from("/Applications/Feishu.app"),
+            PathBuf::from("/Applications/飞书.app"),
+        ]
     }
     #[cfg(not(target_os = "macos"))]
     {
