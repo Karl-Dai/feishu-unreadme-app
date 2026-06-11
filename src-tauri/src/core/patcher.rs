@@ -169,7 +169,11 @@ mod tests {
         // 当成 `l` 的成员访问,语义错。新 regex `[\w.]+\.info\(...)` 必须命中
         // 整个 `l.Ay.info(...)`,注入到 `l` 前。
         let tmp = tempfile::tempdir().unwrap();
-        write(tmp.path(), "a.js", "x; l.Ay.info(\"updateMessagesMeRead\", t);");
+        write(
+            tmp.path(),
+            "a.js",
+            "x; l.Ay.info(\"updateMessagesMeRead\", t);",
+        );
         let rules = vec![PatchRule {
             id: "r1".into(),
             regex: r#"[\w.]+\.info\("updateMessagesMeRead""#.into(),
